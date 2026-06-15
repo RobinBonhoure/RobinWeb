@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "experiences": "Expériences",
+    "educations": "Formations",
+    "skills": "Compétences",
+    "projects": "Projets",
+    "downloadCV": "Télécharger mon CV",
+    "playGame": "Jouer"
+  },
+  "admin": {
+    "title": "Administration",
+    "nav": {
+      "experiences": "Expériences",
+      "educations": "Formations",
+      "skills": "Compétences",
+      "projects": "Projets",
+      "profile": "Profil"
+    },
+    "actions": {
+      "add": "Ajouter",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "saving": "Enregistrement…",
+      "deleting": "Suppression…"
+    },
+    "fields": {
+      "fr": "Français",
+      "en": "Anglais",
+      "order": "Ordre"
+    },
+    "confirmDelete": "Supprimer cet élément ?",
+    "confirmDeleteDesc": "Cette action est irréversible.",
+    "logout": "Déconnexion"
+  },
+  "login": {
+    "title": "Connexion",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "error": "Email ou mot de passe incorrect."
+  },
+  "hero": {
+    "cta": "Voir mes projets"
+  },
+  "sections": {
+    "experiences": "Expériences",
+    "educations": "Formations",
+    "stack": "Stack",
+    "skills": "Compétences",
+    "projects": "Projets",
+    "game": "Stack your skills"
+  },
+  "game": {
+    "play": "Jouer",
+    "reset": "Recommencer",
+    "score": "Hauteur",
+    "gameOver": "Game over"
+  }
+}

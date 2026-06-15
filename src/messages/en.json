@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "experiences": "Experience",
+    "educations": "Education",
+    "skills": "Skills",
+    "projects": "Projects",
+    "downloadCV": "Download my CV",
+    "playGame": "Play"
+  },
+  "admin": {
+    "title": "Administration",
+    "nav": {
+      "experiences": "Experience",
+      "educations": "Education",
+      "skills": "Skills",
+      "projects": "Projects",
+      "profile": "Profile"
+    },
+    "actions": {
+      "add": "Add",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "deleting": "Deleting…"
+    },
+    "fields": {
+      "fr": "French",
+      "en": "English",
+      "order": "Order"
+    },
+    "confirmDelete": "Delete this item?",
+    "confirmDeleteDesc": "This action cannot be undone.",
+    "logout": "Logout"
+  },
+  "login": {
+    "title": "Login",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "error": "Invalid email or password."
+  },
+  "hero": {
+    "cta": "View my projects"
+  },
+  "sections": {
+    "experiences": "Experience",
+    "educations": "Education",
+    "stack": "Stack",
+    "skills": "Skills",
+    "projects": "Projects",
+    "game": "Stack your skills"
+  },
+  "game": {
+    "play": "Play",
+    "reset": "Reset",
+    "score": "Height",
+    "gameOver": "Game over"
+  }
+}
