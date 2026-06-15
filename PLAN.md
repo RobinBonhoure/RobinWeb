@@ -45,23 +45,26 @@ Design « light minimal suisse », hero 3D parallax, mini-jeu physique isolé, b
 - [ ] git init + commit initial
 
 ### Phase 1 — Drizzle + Neon
-- [ ] `src/db/index.ts` (client Neon serverless + drizzle)
-- [ ] `src/db/schema.ts` : experiences, educations, skills, projects, profile
-- [ ] `drizzle.config.ts` + scripts (generate / migrate / push / studio)
-- [ ] Migration appliquée sur Neon
+- [x] `src/db/index.ts` (client Neon serverless + drizzle)
+- [x] `src/db/schema.ts` : experiences, educations, skills, projects, profile
+- [x] `drizzle.config.ts` + scripts (generate / migrate / push / studio)
+- [x] Migration générée (`drizzle/0000…`, `0001…`)
+- [ ] ⏳ Migration appliquée sur Neon (nécessite `DATABASE_URL`)
 
 ### Phase 2 — Better Auth + seed admin
-- [ ] `src/lib/auth.ts` + `src/lib/auth-client.ts` (adapter drizzle)
-- [ ] Tables auth (user, session, account, verification) en base
-- [ ] `src/app/api/auth/[...all]/route.ts`
-- [ ] Inscription publique désactivée
-- [ ] `src/db/seed.ts` — compte admin via env
-- [ ] Page login + helper `getSession()`
+- [x] `src/lib/auth.ts` + `src/lib/auth-client.ts` (adapter drizzle)
+- [x] Schéma tables auth (user, session, account, verification) généré via CLI
+- [x] `src/app/api/auth/[...all]/route.ts`
+- [x] Inscription publique désactivée (`disableSignUp: true`)
+- [x] `src/db/seed.ts` — compte admin via env + helper `getSession()`/`requireSession()`
+- [ ] Page login (construite avec la structure `/[locale]/admin` en Phase 4)
+- [ ] ⏳ Seed admin exécuté (nécessite credentials)
 
 ### Phase 3 — Seed contenu (FR + EN générée)
-- [ ] seed.ts : profile + 5 expériences + 6 formations + skills (section 8 du brief)
-- [ ] Traduction EN initiale de chaque champ `*_en`
-- [ ] Projets vides (ajout via admin)
+- [x] `src/db/seed-content.ts` : profile + 5 expériences + 6 formations + skills (section 8)
+- [x] Traduction EN initiale de chaque champ `*_en`
+- [x] Projets vides (ajout via admin)
+- [ ] ⏳ Seed exécuté sur Neon (nécessite credentials)
 
 ### Phase 4 — Admin CRUD
 - [ ] Pattern de référence sur `experiences` (validator zod + actions + layout garde + liste + form + dnd)

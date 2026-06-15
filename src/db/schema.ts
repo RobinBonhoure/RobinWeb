@@ -8,6 +8,10 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
+// Re-export Better Auth tables (user, session, account, verification) so the
+// db client and drizzle-kit see a single, complete schema.
+export * from "./auth-schema";
+
 /**
  * Bilingual content lives in side-by-side `*Fr` / `*En` columns (no translation
  * table). Every content table carries an integer `order` for drag-and-drop
