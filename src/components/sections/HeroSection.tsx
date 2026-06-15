@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Profile } from "@/db/schema";
+import { HeroScene } from "@/components/three/HeroSceneLazy";
 
 interface Props {
   profile: Profile;
@@ -62,12 +63,8 @@ export function HeroSection({ profile, locale }: Props) {
         </a>
       </div>
 
-      {/* 3D hero placeholder — replaced in Phase 8 */}
-      <div
-        id="hero-canvas"
-        className="absolute inset-0 -z-10 bg-gradient-to-br from-secondary/30 to-background"
-        aria-hidden
-      />
+      {/* 3D hero — R3F parallax scene, lazy-loaded, fallback for reduced-motion/mobile */}
+      <HeroScene />
     </section>
   );
 }
