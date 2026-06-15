@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1781533984275,
+      "tag": "0000_legal_jasper_sitwell",
+      "breakpoints": true
+    }
+  ]
+}
