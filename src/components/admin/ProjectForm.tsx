@@ -1,8 +1,11 @@
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { projectSchema, type ProjectFormValues } from "@/lib/validators/project";
+import {
+  projectSchema,
+  type ProjectFormValues,
+} from "@/lib/validators/project";
 import { createProject, updateProject } from "@/lib/actions/projects";
 import type { Project } from "@/db/schema";
 import { Button } from "@/components/ui/button";
@@ -28,7 +31,6 @@ export function ProjectForm({ project, defaultOrder = 0, onSuccess }: Props) {
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { isSubmitting, errors },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -46,8 +48,24 @@ export function ProjectForm({ project, defaultOrder = 0, onSuccess }: Props) {
           featured: project.featured,
           order: project.order,
         }
-      : { slug: "", titleFr: "", titleEn: "", descFr: "", descEn: "", tags: [], imageUrl: "", liveUrl: "", repoUrl: "", featured: false, order: defaultOrder },
+      : {
+          slug: "",
+          titleFr: "",
+          titleEn: "",
+          descFr: "",
+          descEn: "",
+          tags: [],
+          imageUrl: "",
+          liveUrl: "",
+          repoUrl: "",
+          featured: false,
+          order: defaultOrder,
+        },
   });
+
+  const imageUrl = useWatch({ control, name: "imageUrl" }) ?? "";
+
+  const hasEnErrors = !!(errors.titleEn || errors.descEn);
 
   const onSubmit = async (data: ProjectFormValues) => {
     try {
@@ -60,28 +78,48 @@ export function ProjectForm({ project, defaultOrder = 0, onSuccess }: Props) {
     }
   };
 
+  const onInvalid = () => {
+    toast.error("Veuillez remplir tous les champs requis.");
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5 col-span-2">
           <Label htmlFor="slug">Slug (URL)</Label>
           <Input id="slug" {...register("slug")} placeholder="mon-projet" />
-          {errors.slug && <p className="text-xs text-destructive">{errors.slug.message}</p>}
+          {errors.slug && (
+            <p className="text-xs text-destructive">{errors.slug.message}</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="liveUrl">URL live</Label>
-          <Input id="liveUrl" {...register("liveUrl")} type="url" placeholder="https://…" />
+          <Input
+            id="liveUrl"
+            {...register("liveUrl")}
+            placeholder="https://…"
+          />
+          {errors.liveUrl && (
+            <p className="text-xs text-destructive">{errors.liveUrl.message}</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="repoUrl">URL repo</Label>
-          <Input id="repoUrl" {...register("repoUrl")} type="url" placeholder="https://github.com/…" />
+          <Input
+            id="repoUrl"
+            {...register("repoUrl")}
+            placeholder="https://github.com/…"
+          />
+          {errors.repoUrl && (
+            <p className="text-xs text-destructive">{errors.repoUrl.message}</p>
+          )}
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label>Image</Label>
         <ImageUpload
-          value={watch("imageUrl") ?? ""}
+          value={imageUrl}
           onChange={(url) => setValue("imageUrl", url)}
           folder="projects"
         />
@@ -92,7 +130,11 @@ export function ProjectForm({ project, defaultOrder = 0, onSuccess }: Props) {
           name="featured"
           control={control}
           render={({ field }) => (
-            <Switch id="featured" checked={field.value} onCheckedChange={field.onChange} />
+            <Switch
+              id="featured"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
           )}
         />
         <Label htmlFor="featured">Mis en avant</Label>
@@ -102,33 +144,59 @@ export function ProjectForm({ project, defaultOrder = 0, onSuccess }: Props) {
         name="tags"
         control={control}
         render={({ field }) => (
-          <BulletsField value={field.value} onChange={field.onChange} label="Tags" />
+          <BulletsField
+            value={field.value}
+            onChange={field.onChange}
+            label="Tags"
+          />
         )}
       />
 
       <Tabs defaultValue="fr">
         <TabsList>
-          <TabsTrigger value="fr">Français</TabsTrigger>
-          <TabsTrigger value="en">English</TabsTrigger>
+          <TabsTrigger value="fr" className="relative">
+            Français
+            {(errors.titleFr || errors.descFr) && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="en" className="relative">
+            English
+            {hasEnErrors && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="fr" className="space-y-4 pt-4">
           <div className="space-y-1.5">
             <Label htmlFor="titleFr">Titre (FR)</Label>
             <Input id="titleFr" {...register("titleFr")} />
+            {errors.titleFr && (
+              <p className="text-xs text-destructive">{errors.titleFr.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="descFr">Description (FR)</Label>
             <Textarea id="descFr" {...register("descFr")} rows={3} />
+            {errors.descFr && (
+              <p className="text-xs text-destructive">{errors.descFr.message}</p>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="en" className="space-y-4 pt-4">
           <div className="space-y-1.5">
             <Label htmlFor="titleEn">Title (EN)</Label>
             <Input id="titleEn" {...register("titleEn")} />
+            {errors.titleEn && (
+              <p className="text-xs text-destructive">{errors.titleEn.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="descEn">Description (EN)</Label>
             <Textarea id="descEn" {...register("descEn")} rows={3} />
+            {errors.descEn && (
+              <p className="text-xs text-destructive">{errors.descEn.message}</p>
+            )}
           </div>
         </TabsContent>
       </Tabs>

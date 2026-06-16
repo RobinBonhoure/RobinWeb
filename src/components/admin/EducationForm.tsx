@@ -39,6 +39,10 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
       : { school: "", period: "", titleFr: "", titleEn: "", detailFr: "", detailEn: "", order: defaultOrder },
   });
 
+  const onInvalid = () => {
+    toast.error("Veuillez remplir tous les champs requis.");
+  };
+
   const onSubmit = async (data: EducationFormValues) => {
     try {
       if (isEdit) await updateEducation(education.id, data);
@@ -51,7 +55,7 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="school">École / Organisme</Label>
@@ -65,13 +69,24 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
       </div>
       <Tabs defaultValue="fr">
         <TabsList>
-          <TabsTrigger value="fr">Français</TabsTrigger>
-          <TabsTrigger value="en">English</TabsTrigger>
+          <TabsTrigger value="fr" className="relative">
+            Français
+            {errors.titleFr && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="en" className="relative">
+            English
+            {errors.titleEn && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="fr" className="space-y-4 pt-4">
           <div className="space-y-1.5">
             <Label htmlFor="titleFr">Titre (FR)</Label>
             <Input id="titleFr" {...register("titleFr")} />
+            {errors.titleFr && <p className="text-xs text-destructive">{errors.titleFr.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="detailFr">Détail (FR)</Label>
@@ -82,6 +97,7 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
           <div className="space-y-1.5">
             <Label htmlFor="titleEn">Title (EN)</Label>
             <Input id="titleEn" {...register("titleEn")} />
+            {errors.titleEn && <p className="text-xs text-destructive">{errors.titleEn.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="detailEn">Detail (EN)</Label>

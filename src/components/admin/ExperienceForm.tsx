@@ -42,6 +42,10 @@ export function ExperienceForm({ experience, defaultOrder = 0, onSuccess }: Prop
       : { company: "", location: "", period: "", roleFr: "", roleEn: "", bulletsFr: [], bulletsEn: [], order: defaultOrder },
   });
 
+  const onInvalid = () => {
+    toast.error("Veuillez remplir tous les champs requis.");
+  };
+
   const onSubmit = async (data: ExperienceFormValues) => {
     try {
       if (isEdit) {
@@ -57,7 +61,7 @@ export function ExperienceForm({ experience, defaultOrder = 0, onSuccess }: Prop
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="company">Entreprise</Label>
@@ -77,13 +81,24 @@ export function ExperienceForm({ experience, defaultOrder = 0, onSuccess }: Prop
 
       <Tabs defaultValue="fr">
         <TabsList>
-          <TabsTrigger value="fr">Français</TabsTrigger>
-          <TabsTrigger value="en">English</TabsTrigger>
+          <TabsTrigger value="fr" className="relative">
+            Français
+            {errors.roleFr && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="en" className="relative">
+            English
+            {errors.roleEn && (
+              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="fr" className="space-y-4 pt-4">
           <div className="space-y-1.5">
             <Label htmlFor="roleFr">Poste (FR)</Label>
             <Input id="roleFr" {...register("roleFr")} />
+            {errors.roleFr && <p className="text-xs text-destructive">{errors.roleFr.message}</p>}
           </div>
           <Controller
             name="bulletsFr"
@@ -97,6 +112,7 @@ export function ExperienceForm({ experience, defaultOrder = 0, onSuccess }: Prop
           <div className="space-y-1.5">
             <Label htmlFor="roleEn">Role (EN)</Label>
             <Input id="roleEn" {...register("roleEn")} />
+            {errors.roleEn && <p className="text-xs text-destructive">{errors.roleEn.message}</p>}
           </div>
           <Controller
             name="bulletsEn"

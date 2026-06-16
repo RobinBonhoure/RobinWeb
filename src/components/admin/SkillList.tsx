@@ -47,12 +47,17 @@ export function SkillList({ initial }: { initial: Skill[] }) {
   return (
     <>
       <Toaster richColors />
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Compétences</h1>
-        <Button size="sm" className="gap-2" onClick={() => setAddOpen(true)}>
+
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Compétences</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{items.length} compétence{items.length !== 1 ? "s" : ""}</p>
+        </div>
+        <Button size="sm" className="gap-2 rounded-lg" onClick={() => setAddOpen(true)}>
           <Plus className="size-4" />Ajouter
         </Button>
       </div>
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
@@ -60,11 +65,15 @@ export function SkillList({ initial }: { initial: Skill[] }) {
               <SortableItem key={skill.id} id={skill.id}>
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <Badge variant="secondary" className="shrink-0 text-xs">{CATEGORY_LABELS[skill.category] ?? skill.category}</Badge>
-                    <p className="font-medium truncate">{skill.name}</p>
+                    <Badge variant="secondary" className="shrink-0 text-xs rounded-md">
+                      {CATEGORY_LABELS[skill.category] ?? skill.category}
+                    </Badge>
+                    <p className="font-medium truncate text-sm">{skill.name}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => setEditTarget(skill)} aria-label="Modifier"><Pencil className="size-4" /></Button>
+                    <Button variant="ghost" size="icon" className="size-8 rounded-md" onClick={() => setEditTarget(skill)} aria-label="Modifier">
+                      <Pencil className="size-3.5" />
+                    </Button>
                     <DeleteButton onDelete={async () => { await deleteSkill(skill.id); setItems((p) => p.filter((i) => i.id !== skill.id)); }} />
                   </div>
                 </div>
@@ -73,12 +82,20 @@ export function SkillList({ initial }: { initial: Skill[] }) {
           </div>
         </SortableContext>
       </DndContext>
+
+      {items.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-lg">
+          <p className="text-sm text-muted-foreground">Aucune compétence — ajoutez-en une.</p>
+        </div>
+      )}
+
       <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Modifier la compétence</DialogTitle></DialogHeader>
           {editTarget && <SkillForm skill={editTarget} onSuccess={() => { setEditTarget(null); window.location.reload(); }} />}
         </DialogContent>
       </Dialog>
+
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Ajouter une compétence</DialogTitle></DialogHeader>

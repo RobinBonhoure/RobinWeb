@@ -11,11 +11,11 @@ export default async function LoginPage({
   const session = await getSession();
 
   if (session) {
-    redirect(`/${locale}/admin`);
+    redirect(locale === "fr" ? "/admin" : "/en/admin");
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30">
+    <div data-admin className="min-h-screen flex items-center justify-center bg-secondary/30">
       <div className="w-full max-w-sm">
         <LoginForm locale={locale} />
       </div>

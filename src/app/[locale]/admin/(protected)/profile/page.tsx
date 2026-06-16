@@ -8,7 +8,10 @@ export default async function AdminProfilePage() {
   if (!profileData) notFound();
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight mb-8">Profil</h1>
+      <div className="mb-8">
+        <h1 className="text-xl font-semibold tracking-tight">Profil</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Informations publiques et liens sociaux</p>
+      </div>
       <ProfileForm profile={profileData} />
     </>
   );

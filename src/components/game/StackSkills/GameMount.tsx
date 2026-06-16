@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Text, PerspectiveCamera, Environment } from "@react-three/drei";
+import { Text, PerspectiveCamera } from "@react-three/drei";
 import {
   Physics,
   RigidBody,
@@ -12,32 +12,21 @@ import {
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
 
-/** Props contract — keep stable so the section wrapper never needs to change. */
 interface Props {
   skills: string[];
   locale: string;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const BLOCK_W = 2;
 const BLOCK_H = 0.4;
 const BLOCK_D = 1;
 const DROP_Y = 8;
 const SWING_RANGE = 1.8;
 const SWING_SPEED = 1.2;
-const FALL_THRESHOLD = -3; // block y below this → game over
+const FALL_THRESHOLD = -3;
 
-// ── Colour palette (Swiss, desaturated) ──────────────────────────────────────
-const PALETTE = [
-  "#1a1a1a",
-  "#4a4a4a",
-  "#7a7a7a",
-  "#a8a8a8",
-  "#c8c8c8",
-  "#e2e2e2",
-];
+const PALETTE = ["#1a1a1a", "#4a4a4a", "#7a7a7a", "#a8a8a8", "#c8c8c8", "#e2e2e2"];
 
-// ── Block data ────────────────────────────────────────────────────────────────
 interface BlockData {
   id: number;
   label: string;
@@ -45,21 +34,20 @@ interface BlockData {
   landedY: number;
 }
 
-// ── Swinging (to-drop) block ─────────────────────────────────────────────────
 function SwingingBlock({
   label,
   color,
   onDrop,
-  stackHeight,
 }: {
   label: string;
   color: string;
   onDrop: (x: number) => void;
-  stackHeight: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const phase = useRef(0);
   const dropped = useRef(false);
+  const onDropRef = useRef(onDrop);
+  onDropRef.current = onDrop;
 
   useFrame((_, delta) => {
     if (!meshRef.current || dropped.current) return;
@@ -69,29 +57,36 @@ function SwingingBlock({
   });
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.code === "Space" || e.code === "Enter") && !dropped.current) {
-        drop();
+    dropped.current = false;
+  }, [label]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.code === "Space" || e.code === "Enter") && !dropped.current && meshRef.current) {
+        dropped.current = true;
+        onDropRef.current(meshRef.current.position.x);
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
-  const drop = () => {
+  const handleClick = () => {
     if (dropped.current || !meshRef.current) return;
     dropped.current = true;
-    onDrop(meshRef.current.position.x);
+    onDropRef.current(meshRef.current.position.x);
   };
 
+  const textColor = color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a";
+
   return (
-    <mesh ref={meshRef} onClick={drop} position={[0, DROP_Y, 0]}>
+    <mesh ref={meshRef} onClick={handleClick} position={[0, DROP_Y, 0]}>
       <boxGeometry args={[BLOCK_W, BLOCK_H, BLOCK_D]} />
       <meshStandardMaterial color={color} />
       <Text
         position={[0, 0, BLOCK_D / 2 + 0.01]}
         fontSize={0.18}
-        color={color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a"}
+        color={textColor}
         anchorX="center"
         anchorY="middle"
         maxWidth={BLOCK_W - 0.2}
@@ -102,7 +97,6 @@ function SwingingBlock({
   );
 }
 
-// ── A landed (physics-enabled) block ─────────────────────────────────────────
 function LandedBlock({
   label,
   color,
@@ -118,15 +112,18 @@ function LandedBlock({
 }) {
   const rb = useRef<RapierRigidBody>(null);
   const fallen = useRef(false);
+  const onFallRef = useRef(onFall);
+  onFallRef.current = onFall;
 
   useFrame(() => {
     if (fallen.current || !rb.current) return;
-    const pos = rb.current.translation();
-    if (pos.y < FALL_THRESHOLD) {
+    if (rb.current.translation().y < FALL_THRESHOLD) {
       fallen.current = true;
-      onFall();
+      onFallRef.current();
     }
   });
+
+  const textColor = color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a";
 
   return (
     <RigidBody ref={rb} position={[x, y, 0]} colliders={false} restitution={0.1} friction={0.8}>
@@ -137,7 +134,7 @@ function LandedBlock({
         <Text
           position={[0, 0, BLOCK_D / 2 + 0.01]}
           fontSize={0.18}
-          color={color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a"}
+          color={textColor}
           anchorX="center"
           anchorY="middle"
           maxWidth={BLOCK_W - 0.2}
@@ -149,7 +146,6 @@ function LandedBlock({
   );
 }
 
-// ── Ground ────────────────────────────────────────────────────────────────────
 function Ground() {
   return (
     <RigidBody type="fixed" position={[0, -0.5, 0]}>
@@ -162,31 +158,26 @@ function Ground() {
   );
 }
 
-// ── Game scene ────────────────────────────────────────────────────────────────
 function GameScene({
-  skills,
   blocks,
   nextSkill,
   nextColor,
   gameOver,
   onDrop,
   onFall,
-  stackTopY,
 }: {
-  skills: string[];
   blocks: BlockData[];
   nextSkill: string;
   nextColor: string;
   gameOver: boolean;
   onDrop: (x: number) => void;
   onFall: () => void;
-  stackTopY: number;
 }) {
   return (
     <Physics gravity={[0, -9.8, 0]}>
-      <Environment preset="studio" />
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[5, 10, 5]} intensity={0.6} castShadow={false} />
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[5, 10, 5]} intensity={0.8} />
+      <directionalLight position={[-5, 5, -5]} intensity={0.3} />
 
       <PerspectiveCamera makeDefault position={[0, 4, 10]} fov={45} />
 
@@ -205,29 +196,34 @@ function GameScene({
 
       {!gameOver && (
         <SwingingBlock
-          key={blocks.length}
+          key={`swing-${blocks.length}`}
           label={nextSkill}
           color={nextColor}
           onDrop={onDrop}
-          stackHeight={stackTopY}
         />
       )}
     </Physics>
   );
 }
 
-// ── Main mount ────────────────────────────────────────────────────────────────
 export default function GameMount({ skills, locale }: Props) {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(null);
+  const [ready, setReady] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
+    setPrefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     setIsMobile(window.innerWidth < 640);
+    setReady(true);
   }, []);
 
-  const shuffled = [...skills].sort(() => Math.random() - 0.5);
+  // Stable shuffled list — only shuffles once on mount
+  const shuffled = useMemo(
+    () => (skills.length > 0 ? [...skills].sort(() => Math.random() - 0.5) : ["React"]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const [blocks, setBlocks] = useState<BlockData[]>([]);
   const [nextIndex, setNextIndex] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -237,18 +233,17 @@ export default function GameMount({ skills, locale }: Props) {
   const stackTopY = blocks.length * (BLOCK_H + 0.02) + BLOCK_H / 2 + 0.5;
   const nextSkill = shuffled[nextIndex % shuffled.length];
   const nextColor = PALETTE[nextIndex % PALETTE.length];
-  const score = blocks.length;
 
   const handleDrop = (x: number) => {
     const id = ++blockCounter.current;
-    const landedY = stackTopY;
-    setBlocks((prev) => [...prev, { id, label: nextSkill, color: nextColor, landedY }]);
+    setBlocks((prev) => [
+      ...prev,
+      { id, label: nextSkill, color: nextColor, landedY: stackTopY },
+    ]);
     setNextIndex((i) => i + 1);
   };
 
-  const handleFall = () => {
-    if (!gameOver) setGameOver(true);
-  };
+  const handleFall = () => setGameOver(true);
 
   const reset = () => {
     setBlocks([]);
@@ -257,7 +252,7 @@ export default function GameMount({ skills, locale }: Props) {
     blockCounter.current = 0;
   };
 
-  if (prefersReducedMotion === null) return null;
+  if (!ready) return null;
 
   if (prefersReducedMotion || isMobile) {
     return (
@@ -269,11 +264,11 @@ export default function GameMount({ skills, locale }: Props) {
 
   if (!started) {
     return (
-      <div className="flex flex-col items-center justify-center h-72 rounded-lg border border-border gap-4">
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-64 rounded-lg border border-border gap-4 bg-secondary/30">
+        <p className="text-sm text-muted-foreground text-center max-w-xs px-4">
           {locale === "fr"
-            ? "Empilez vos technos — cliquez ou appuyez sur Espace pour lâcher un bloc."
-            : "Stack your skills — click or press Space to drop a block."}
+            ? "Cliquez ou appuyez sur Espace pour lâcher un bloc."
+            : "Click or press Space to drop a block."}
         </p>
         <Button onClick={() => setStarted(true)}>
           {locale === "fr" ? "Jouer" : "Play"}
@@ -283,10 +278,13 @@ export default function GameMount({ skills, locale }: Props) {
   }
 
   return (
-    <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 400 }}>
+    <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 420 }}>
       {/* HUD */}
-      <div className="absolute top-3 left-4 z-10 flex items-center gap-6 text-xs font-medium text-muted-foreground">
-        <span>{locale === "fr" ? "Blocs" : "Blocks"}: <strong className="text-foreground">{score}</strong></span>
+      <div className="absolute top-3 left-4 z-10 flex items-center gap-6 text-xs font-medium text-muted-foreground pointer-events-none">
+        <span>
+          {locale === "fr" ? "Blocs" : "Blocks"}:{" "}
+          <strong className="text-foreground">{blocks.length}</strong>
+        </span>
         {gameOver && (
           <span className="text-destructive font-semibold">
             {locale === "fr" ? "Game over !" : "Game over!"}
@@ -304,19 +302,17 @@ export default function GameMount({ skills, locale }: Props) {
 
       <Canvas shadows={false} dpr={[1, 1.5]} gl={{ antialias: true }}>
         <GameScene
-          skills={shuffled}
           blocks={blocks}
           nextSkill={nextSkill}
           nextColor={nextColor}
           gameOver={gameOver}
           onDrop={handleDrop}
           onFall={handleFall}
-          stackTopY={stackTopY}
         />
       </Canvas>
 
       {!gameOver && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 text-xs text-muted-foreground">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 text-xs text-muted-foreground pointer-events-none select-none">
           {locale === "fr" ? "Cliquez ou Espace pour lâcher" : "Click or Space to drop"}
         </div>
       )}

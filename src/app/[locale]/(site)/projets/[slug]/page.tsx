@@ -66,7 +66,7 @@ export default async function ProjectDetailPage({ params }: Props) {
                 href={project.liveUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 h-10 bg-foreground text-background px-5 text-sm font-medium hover:bg-foreground/90 transition-colors"
+                className="inline-flex items-center gap-2 h-10 bg-foreground text-background px-5 text-sm font-medium rounded-md hover:bg-foreground/90 transition-colors"
               >
                 <ExternalLink className="size-4" />
                 {locale === "fr" ? "Voir le site" : "View site"}
@@ -77,7 +77,7 @@ export default async function ProjectDetailPage({ params }: Props) {
                 href={project.repoUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 h-10 border border-border px-5 text-sm font-medium hover:bg-accent transition-colors"
+                className="inline-flex items-center gap-2 h-10 border border-border px-5 text-sm font-medium rounded-md hover:bg-accent transition-colors"
               >
                 <GitFork className="size-4" />
                 {locale === "fr" ? "Voir le code" : "View code"}

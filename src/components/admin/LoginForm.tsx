@@ -35,14 +35,17 @@ export function LoginForm({ locale }: { locale: string }) {
     if (result.error) {
       setError("Email ou mot de passe incorrect.");
     } else {
-      router.push(`/${locale}/admin`);
+      router.push(locale === "fr" ? "/admin" : "/en/admin");
       router.refresh();
     }
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-8 shadow-sm space-y-6">
-      <h1 className="text-xl font-semibold tracking-tight">Connexion</h1>
+    <div className="rounded-xl border border-border bg-card p-8 shadow-md space-y-6">
+      <div>
+        <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/70 mb-1">Back-office</p>
+        <h1 className="text-xl font-semibold tracking-tight">Connexion</h1>
+      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>

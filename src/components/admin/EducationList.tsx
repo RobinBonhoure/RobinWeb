@@ -40,12 +40,17 @@ export function EducationList({ initial }: { initial: Education[] }) {
   return (
     <>
       <Toaster richColors />
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Formations</h1>
-        <Button size="sm" className="gap-2" onClick={() => setAddOpen(true)}>
+
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Formations</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{items.length} entrée{items.length !== 1 ? "s" : ""}</p>
+        </div>
+        <Button size="sm" className="gap-2 rounded-lg" onClick={() => setAddOpen(true)}>
           <Plus className="size-4" />Ajouter
         </Button>
       </div>
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
@@ -53,11 +58,13 @@ export function EducationList({ initial }: { initial: Education[] }) {
               <SortableItem key={edu.id} id={edu.id}>
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{edu.school}</p>
-                    <p className="text-sm text-muted-foreground">{edu.titleFr} · {edu.period}</p>
+                    <p className="font-medium truncate text-sm">{edu.school}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{edu.titleFr} · {edu.period}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => setEditTarget(edu)} aria-label="Modifier"><Pencil className="size-4" /></Button>
+                    <Button variant="ghost" size="icon" className="size-8 rounded-md" onClick={() => setEditTarget(edu)} aria-label="Modifier">
+                      <Pencil className="size-3.5" />
+                    </Button>
                     <DeleteButton onDelete={async () => { await deleteEducation(edu.id); setItems((p) => p.filter((i) => i.id !== edu.id)); }} />
                   </div>
                 </div>
@@ -66,12 +73,20 @@ export function EducationList({ initial }: { initial: Education[] }) {
           </div>
         </SortableContext>
       </DndContext>
+
+      {items.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-lg">
+          <p className="text-sm text-muted-foreground">Aucune formation — ajoutez-en une.</p>
+        </div>
+      )}
+
       <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifier la formation</DialogTitle></DialogHeader>
           {editTarget && <EducationForm education={editTarget} onSuccess={() => { setEditTarget(null); window.location.reload(); }} />}
         </DialogContent>
       </Dialog>
+
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Ajouter une formation</DialogTitle></DialogHeader>
