@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
-import { routing } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
@@ -22,13 +21,19 @@ export function Header() {
   const toggleLocale = () => {
     const next = locale === "fr" ? "en" : "fr";
     const stripped = pathname.replace(/^\/(en|fr)/, "") || "/";
-    const target = next === routing.defaultLocale ? stripped : `/${next}${stripped}`;
+    const target = `/${next}${stripped}`;
     router.push(target);
   };
 
   const NAV_ITEMS = [
-    { href: "#experiences", label: locale === "fr" ? "Expériences" : "Experience" },
-    { href: "#formations", label: locale === "fr" ? "Formations" : "Education" },
+    {
+      href: "#experiences",
+      label: locale === "fr" ? "Expériences" : "Experience",
+    },
+    {
+      href: "#formations",
+      label: locale === "fr" ? "Formations" : "Education",
+    },
     { href: "#stack", label: "Stack" },
     { href: "#projets", label: locale === "fr" ? "Projets" : "Projects" },
   ];
@@ -51,7 +56,10 @@ export function Header() {
       </Link>
 
       {/* Nav */}
-      <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground" aria-label="Navigation principale">
+      <nav
+        className="hidden md:flex items-center gap-8 text-sm text-muted-foreground"
+        aria-label="Navigation principale"
+      >
         {NAV_ITEMS.map(({ href, label }) => (
           <Link
             key={href}
@@ -70,7 +78,9 @@ export function Header() {
         size="sm"
         onClick={toggleLocale}
         className="text-xs font-medium tracking-wider uppercase relative group"
-        aria-label={locale === "fr" ? "Switch to English" : "Passer en français"}
+        aria-label={
+          locale === "fr" ? "Switch to English" : "Passer en français"
+        }
       >
         {locale === "fr" ? "EN" : "FR"}
       </Button>

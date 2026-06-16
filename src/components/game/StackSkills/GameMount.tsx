@@ -1,6 +1,13 @@
 "use client";
 
-import { Component, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Text, PerspectiveCamera } from "@react-three/drei";
@@ -221,13 +228,27 @@ function GameScene({
   onDrop: (x: number) => void;
   onFall: () => void;
 }) {
+  const camRef = useRef<THREE.PerspectiveCamera>(null);
+
+  useEffect(() => {
+    if (camRef.current) {
+      camRef.current.lookAt(0, 4, 0);
+      camRef.current.updateMatrixWorld();
+    }
+  }, []);
+
   return (
     <Physics gravity={[0, -9.8, 0]}>
       <ambientLight intensity={1.2} />
       <directionalLight position={[5, 10, 5]} intensity={0.8} />
       <directionalLight position={[-5, 5, -5]} intensity={0.3} />
 
-      <PerspectiveCamera makeDefault position={[0, 4, 10]} fov={45} />
+      <PerspectiveCamera
+        ref={camRef}
+        makeDefault
+        position={[8, 8, 12]}
+        fov={45}
+      />
 
       <Ground />
 
