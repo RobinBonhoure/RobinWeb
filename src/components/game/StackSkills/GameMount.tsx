@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Text, PerspectiveCamera } from "@react-three/drei";
 import {
@@ -11,6 +12,28 @@ import {
 } from "@react-three/rapier";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
+
+class CanvasErrorBoundary extends Component<
+  { children: ReactNode; locale: string },
+  { crashed: boolean }
+> {
+  state = { crashed: false };
+  static getDerivedStateFromError() {
+    return { crashed: true };
+  }
+  render() {
+    if (this.state.crashed) {
+      return (
+        <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+          {this.props.locale === "fr"
+            ? "Le jeu n'a pas pu se charger."
+            : "The game failed to load."}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface Props {
   skills: string[];
@@ -25,7 +48,14 @@ const SWING_RANGE = 1.8;
 const SWING_SPEED = 1.2;
 const FALL_THRESHOLD = -3;
 
-const PALETTE = ["#1a1a1a", "#4a4a4a", "#7a7a7a", "#a8a8a8", "#c8c8c8", "#e2e2e2"];
+const PALETTE = [
+  "#1a1a1a",
+  "#4a4a4a",
+  "#7a7a7a",
+  "#a8a8a8",
+  "#c8c8c8",
+  "#e2e2e2",
+];
 
 interface BlockData {
   id: number;
@@ -47,7 +77,10 @@ function SwingingBlock({
   const phase = useRef(0);
   const dropped = useRef(false);
   const onDropRef = useRef(onDrop);
-  onDropRef.current = onDrop;
+
+  useEffect(() => {
+    onDropRef.current = onDrop;
+  }, [onDrop]);
 
   useFrame((_, delta) => {
     if (!meshRef.current || dropped.current) return;
@@ -62,7 +95,11 @@ function SwingingBlock({
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if ((e.code === "Space" || e.code === "Enter") && !dropped.current && meshRef.current) {
+      if (
+        (e.code === "Space" || e.code === "Enter") &&
+        !dropped.current &&
+        meshRef.current
+      ) {
         dropped.current = true;
         onDropRef.current(meshRef.current.position.x);
       }
@@ -77,7 +114,8 @@ function SwingingBlock({
     onDropRef.current(meshRef.current.position.x);
   };
 
-  const textColor = color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a";
+  const textColor =
+    color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a";
 
   return (
     <mesh ref={meshRef} onClick={handleClick} position={[0, DROP_Y, 0]}>
@@ -113,7 +151,10 @@ function LandedBlock({
   const rb = useRef<RapierRigidBody>(null);
   const fallen = useRef(false);
   const onFallRef = useRef(onFall);
-  onFallRef.current = onFall;
+
+  useEffect(() => {
+    onFallRef.current = onFall;
+  }, [onFall]);
 
   useFrame(() => {
     if (fallen.current || !rb.current) return;
@@ -123,10 +164,17 @@ function LandedBlock({
     }
   });
 
-  const textColor = color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a";
+  const textColor =
+    color === "#1a1a1a" || color === "#4a4a4a" ? "#f5f5f5" : "#1a1a1a";
 
   return (
-    <RigidBody ref={rb} position={[x, y, 0]} colliders={false} restitution={0.1} friction={0.8}>
+    <RigidBody
+      ref={rb}
+      position={[x, y, 0]}
+      colliders={false}
+      restitution={0.1}
+      friction={0.8}
+    >
       <CuboidCollider args={[BLOCK_W / 2, BLOCK_H / 2, BLOCK_D / 2]} />
       <mesh>
         <boxGeometry args={[BLOCK_W, BLOCK_H, BLOCK_D]} />
@@ -207,21 +255,46 @@ function GameScene({
 }
 
 export default function GameMount({ skills, locale }: Props) {
-  const [ready, setReady] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 640,
+  );
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
 
   useEffect(() => {
-    setPrefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    setIsMobile(window.innerWidth < 640);
-    setReady(true);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    const handleMotionChange = (e: MediaQueryListEvent) =>
+      setPrefersReducedMotion(e.matches);
+
+    window.addEventListener("resize", handleResize);
+    mediaQuery.addEventListener("change", handleMotionChange);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      mediaQuery.removeEventListener("change", handleMotionChange);
+    };
   }, []);
 
   // Stable shuffled list — only shuffles once on mount
   const shuffled = useMemo(
-    () => (skills.length > 0 ? [...skills].sort(() => Math.random() - 0.5) : ["React"]),
+    () =>
+      skills.length > 0
+        ? [...skills].sort((a, b) => {
+            const hash = (value: string) =>
+              value
+                .split("")
+                .reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 0);
+
+            return hash(a) - hash(b);
+          })
+        : ["React"],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const [blocks, setBlocks] = useState<BlockData[]>([]);
@@ -234,7 +307,7 @@ export default function GameMount({ skills, locale }: Props) {
   const nextSkill = shuffled[nextIndex % shuffled.length];
   const nextColor = PALETTE[nextIndex % PALETTE.length];
 
-  const handleDrop = (x: number) => {
+  const handleDrop = () => {
     const id = ++blockCounter.current;
     setBlocks((prev) => [
       ...prev,
@@ -252,12 +325,12 @@ export default function GameMount({ skills, locale }: Props) {
     blockCounter.current = 0;
   };
 
-  if (!ready) return null;
-
   if (prefersReducedMotion || isMobile) {
     return (
       <div className="flex items-center justify-center h-48 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
-        {locale === "fr" ? "Jeu 3D disponible sur desktop" : "3D game available on desktop"}
+        {locale === "fr"
+          ? "Jeu 3D disponible sur desktop"
+          : "3D game available on desktop"}
       </div>
     );
   }
@@ -278,7 +351,10 @@ export default function GameMount({ skills, locale }: Props) {
   }
 
   return (
-    <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 420 }}>
+    <div
+      className="relative rounded-lg overflow-hidden border border-border"
+      style={{ height: 420 }}
+    >
       {/* HUD */}
       <div className="absolute top-3 left-4 z-10 flex items-center gap-6 text-xs font-medium text-muted-foreground pointer-events-none">
         <span>
@@ -300,20 +376,26 @@ export default function GameMount({ skills, locale }: Props) {
         {locale === "fr" ? "Recommencer" : "Reset"}
       </Button>
 
-      <Canvas shadows={false} dpr={[1, 1.5]} gl={{ antialias: true }}>
-        <GameScene
-          blocks={blocks}
-          nextSkill={nextSkill}
-          nextColor={nextColor}
-          gameOver={gameOver}
-          onDrop={handleDrop}
-          onFall={handleFall}
-        />
-      </Canvas>
+      <CanvasErrorBoundary locale={locale}>
+        <Canvas shadows={false} dpr={[1, 1.5]} gl={{ antialias: true }}>
+          <Suspense fallback={null}>
+            <GameScene
+              blocks={blocks}
+              nextSkill={nextSkill}
+              nextColor={nextColor}
+              gameOver={gameOver}
+              onDrop={handleDrop}
+              onFall={handleFall}
+            />
+          </Suspense>
+        </Canvas>
+      </CanvasErrorBoundary>
 
       {!gameOver && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 text-xs text-muted-foreground pointer-events-none select-none">
-          {locale === "fr" ? "Cliquez ou Espace pour lâcher" : "Click or Space to drop"}
+          {locale === "fr"
+            ? "Cliquez ou Espace pour lâcher"
+            : "Click or Space to drop"}
         </div>
       )}
     </div>
