@@ -35,7 +35,7 @@ export function SkillsSection({ skills, locale }: Props) {
               {stackSkills.map((s) => (
                 <span
                   key={s.id}
-                  className="inline-flex items-center border border-border px-4 py-2 text-sm font-medium rounded-md"
+                  className="neon-tag-hover inline-flex items-center border border-border px-4 py-2 text-sm font-medium rounded-md"
                 >
                   {s.name}
                 </span>
@@ -60,7 +60,7 @@ export function SkillsSection({ skills, locale }: Props) {
                   <ul className="space-y-3">
                     {(byCategory[cat] ?? []).map((s) => (
                       <li key={s.id} className="flex items-center gap-3 text-sm">
-                        <span className="size-1.5 rounded-full bg-foreground shrink-0" />
+                        <span className="neon-dot size-1.5 rounded-full bg-foreground shrink-0" />
                         {s.name}
                       </li>
                     ))}

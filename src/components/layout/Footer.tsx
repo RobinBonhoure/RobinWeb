@@ -40,7 +40,7 @@ export async function Footer({ locale }: Props) {
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-label text-muted-foreground hover:text-foreground transition-colors"
+                className="neon-link-hover text-label text-muted-foreground hover:text-foreground transition-colors"
               >
                 {label.toUpperCase()}
               </a>

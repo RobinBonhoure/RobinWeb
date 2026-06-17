@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import type { Profile } from "@/db/schema";
-import { HeroScene } from "@/components/three/HeroSceneLazy";
 
 interface Props {
   profile: Profile;
@@ -23,8 +22,24 @@ export function HeroSection({ profile, locale }: Props) {
       className="relative min-h-[calc(100vh-4rem)] flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 overflow-hidden"
       aria-label="Introduction"
     >
+      {/* Neon RGB ambient glow — dark mode only */}
+      {/* <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-700"
+        style={{
+          background: [
+            "radial-gradient(ellipse 55% 45% at 12% 58%, rgb(255 0 80 / 0.055) 0%, transparent 70%)",
+            "radial-gradient(ellipse 48% 55% at 44% 22%, rgb(0 210 255 / 0.065) 0%, transparent 70%)",
+            "radial-gradient(ellipse 38% 48% at 78% 70%, rgb(80 0 255 / 0.05) 0%, transparent 70%)",
+          ].join(", "),
+        }}
+      /> */}
+
       {/* Grid rules */}
-      <div className="absolute inset-y-0 left-0 w-px bg-border/60" aria-hidden />
+      <div
+        className="fixed inset-y-0 left-0 w-px bg-border/60 dark:bg-[linear-gradient(to_bottom,rgb(0_210_255_/_0.22),rgb(80_0_255_/_0.18),rgb(255_0_80_/_0.12))]"
+        aria-hidden
+      />
 
       <div className="max-w-4xl space-y-10 relative z-10">
         {/* Eyebrow */}
@@ -45,7 +60,9 @@ export function HeroSection({ profile, locale }: Props) {
             transition={{ duration: 0.9, delay: 0.35, ease: easeOut }}
             className="leading-[0.88] text-foreground"
           >
-            <span className="text-display block">{firstName}</span>
+            <span className="text-display block neon-text-glow">
+              {firstName}
+            </span>
             <span className="text-display-light block">{lastName}</span>
           </motion.h1>
           <h1 className="sr-only">{profile.name}</h1>
@@ -70,7 +87,7 @@ export function HeroSection({ profile, locale }: Props) {
         >
           <Link
             href="#projets"
-            className="inline-flex h-11 items-center gap-2 bg-foreground text-background px-7 text-sm font-medium tracking-wide rounded-md hover:bg-foreground/80 transition-colors focus-visible:outline"
+            className="neon-btn-glow inline-flex h-11 items-center gap-2 bg-foreground text-background px-7 text-sm font-medium tracking-wide rounded-md hover:bg-foreground/80 transition-[colors,box-shadow] focus-visible:outline"
           >
             {locale === "fr" ? "Voir mes projets" : "View my projects"}
           </Link>
@@ -94,7 +111,9 @@ export function HeroSection({ profile, locale }: Props) {
         transition={{ duration: 0.8, delay: 1.1 }}
       >
         {profile.location && (
-          <span className="text-label text-muted-foreground/60">{profile.location}</span>
+          <span className="text-label text-muted-foreground/60">
+            {profile.location}
+          </span>
         )}
         <a
           href={`mailto:${profile.email}`}
@@ -117,8 +136,6 @@ export function HeroSection({ profile, locale }: Props) {
         </span>
         <div className="w-px h-12 bg-border mt-10" />
       </motion.div>
-
-      <HeroScene />
     </section>
   );
 }

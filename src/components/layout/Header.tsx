@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function Header() {
   const locale = useLocale();
@@ -52,7 +53,7 @@ export function Header() {
         className="text-sm font-semibold tracking-widest uppercase relative group outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
         Robin Bonhoure
-        <span className="absolute -bottom-px left-0 h-px w-0 bg-foreground transition-all duration-300 group-hover:w-full" />
+        <span className="absolute -bottom-px left-0 h-px w-0 bg-foreground dark:bg-cyan-400 transition-all duration-300 group-hover:w-full" />
       </Link>
 
       {/* Nav */}
@@ -64,26 +65,29 @@ export function Header() {
           <Link
             key={href}
             href={href}
-            className="relative group text-muted-foreground hover:text-foreground transition-colors duration-200 outline-none focus-visible:text-foreground"
+            className="relative group text-muted-foreground hover:text-foreground dark:group-hover:text-cyan-400 transition-colors duration-200 outline-none focus-visible:text-foreground"
           >
             {label}
-            <span className="absolute -bottom-px left-0 h-px w-0 bg-foreground transition-all duration-300 group-hover:w-full" />
+            <span className="absolute -bottom-px left-0 h-px w-0 bg-foreground dark:bg-cyan-400 transition-all duration-300 group-hover:w-full" />
           </Link>
         ))}
       </nav>
 
-      {/* Language toggle */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={toggleLocale}
-        className="text-xs font-medium tracking-wider uppercase relative group"
-        aria-label={
-          locale === "fr" ? "Switch to English" : "Passer en français"
-        }
-      >
-        {locale === "fr" ? "EN" : "FR"}
-      </Button>
+      {/* Controls */}
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleLocale}
+          className="text-xs font-medium tracking-wider uppercase relative group"
+          aria-label={
+            locale === "fr" ? "Switch to English" : "Passer en français"
+          }
+        >
+          {locale === "fr" ? "EN" : "FR"}
+        </Button>
+      </div>
     </header>
   );
 }

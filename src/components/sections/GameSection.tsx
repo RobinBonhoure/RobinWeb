@@ -21,7 +21,7 @@ interface Props {
 
 export function GameSection({ skills, locale }: Props) {
   return (
-    <section className="px-6 md:px-16 lg:px-24 py-24 border-t border-border bg-secondary/20">
+    <section id="game" className="px-6 md:px-16 lg:px-24 py-24 border-t border-border bg-secondary/20">
       <div className="max-w-5xl mx-auto">
         <RevealOnScroll>
           <div className="mb-10">

@@ -39,7 +39,13 @@ export function ImageUpload({ value, onChange, folder = "uploads" }: Props) {
     <div className="space-y-2">
       {value && (
         <div className="relative w-40 h-28 rounded-md overflow-hidden border border-border group">
-          <Image src={value} alt="Preview" fill className="object-cover" />
+          <Image
+            src={value}
+            alt="Preview"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
+          />
           <button
             type="button"
             onClick={() => onChange("")}

@@ -37,7 +37,7 @@ export function ExperiencesSection({ experiences, locale }: Props) {
                       <ul className="space-y-1.5">
                         {bullets.map((b, j) => (
                           <li key={j} className="flex gap-3 text-sm text-muted-foreground">
-                            <span className="mt-2 size-1 rounded-full bg-muted-foreground shrink-0" />
+                            <span className="neon-dot mt-2 size-1 rounded-full bg-muted-foreground shrink-0" />
                             {b}
                           </li>
                         ))}
