@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Grid, useHelper } from "@react-three/drei";
+// import { useHelper } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { HalfFloatType } from "three";
 import * as THREE from "three";
@@ -274,10 +274,33 @@ const LIGHTS_CONFIG = [
     intensity: 40,
     w: 2.5,
   },
+  // {
+  //   pos: [-3, -0.5, 0] as [number, number, number],
+  //   color: "rgb(255, 255, 255)",
+  //   intensity: 40,
+  //   w: 3.5,
+  // },
+  // {
+  //   pos: [1.5, 2.5, 0] as [number, number, number],
+  //   color: "rgb(255, 255, 255)",
+  //   intensity: 40,
+  //   w: 2.5,
+  // },
+  // {
+  //   pos: [5.5, -1, 0] as [number, number, number],
+  //   color: "rgb(255, 255, 255)",
+  //   intensity: 40,
+  //   w: 2.5,
+  // },
 ];
 
 // Derived: particle vertex-colour attenuation lights, placed at z=-2 (particle plane).
-const WORLD_LIGHTS = LIGHTS_CONFIG.map((l) => {
+const WORLD_LIGHTS_DARK = LIGHTS_CONFIG.map((l) => {
+  const c = new THREE.Color(l.color);
+  return { x: l.pos[0], y: l.pos[1], z: -2, r: c.r, g: c.g, b: c.b, w: l.w };
+});
+// Light-theme lights: dark saturated colors so particles are visible against white.
+const WORLD_LIGHTS_LIGHT = LIGHTS_CONFIG.map((l) => {
   const c = new THREE.Color(l.color);
   return { x: l.pos[0], y: l.pos[1], z: -2, r: c.r, g: c.g, b: c.b, w: l.w };
 });
@@ -296,38 +319,239 @@ const SECTION_IDS = [
 
 function CameraRig({
   mouse,
+  isMobile,
 }: {
   mouse: React.RefObject<{ x: number; y: number }>;
+  isMobile: boolean;
 }) {
   const { camera } = useThree();
   useFrame(() => {
-    const m = mouse.current;
-    camera.position.lerp(
-      new THREE.Vector3(-m.x * 0.4, -m.y * 0.2 + 0.3, 5),
-      0.04,
-    );
+    if (isMobile) {
+      camera.position.lerp(new THREE.Vector3(0, 0.3, 5), 0.04);
+    } else {
+      const m = mouse.current;
+      camera.position.lerp(
+        new THREE.Vector3(-m.x * 0.4, -m.y * 0.2 + 0.3, 5),
+        0.04,
+      );
+    }
     camera.lookAt(0, 0, 0);
   });
   return null;
 }
 
+const VERTEX_SHADER = /* glsl */ `
+uniform float uTime;
+uniform float uStrength;
+uniform float uSize;
+uniform float uScale;
+
+attribute vec3 color;
+varying vec3 vColor;
+
+vec3 mod289v3(vec3 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+vec4 mod289v4(vec4 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+vec4 permute(vec4 x) { return mod289v4(((x * 34.0) + 1.0) * x); }
+vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+float snoise(vec3 v) {
+  const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i  = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g  = step(x0.yzx, x0.xyz);
+  vec3 l  = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+  i = mod289v3(i);
+  vec4 p = permute(permute(permute(
+    i.z + vec4(0.0, i1.z, i2.z, 1.0)) +
+    i.y + vec4(0.0, i1.y, i2.y, 1.0)) +
+    i.x + vec4(0.0, i1.x, i2.x, 1.0));
+  float n_ = 0.142857142857;
+  vec3  ns = n_ * D.wyz - D.xzx;
+  vec4 j   = p - 49.0 * floor(p * ns.z * ns.z);
+  vec4 x_  = floor(j * ns.z);
+  vec4 y_  = floor(j - 7.0 * x_);
+  vec4 x   = x_ * ns.x + ns.yyyy;
+  vec4 y   = y_ * ns.x + ns.yyyy;
+  vec4 h   = 1.0 - abs(x) - abs(y);
+  vec4 b0  = vec4(x.xy, y.xy);
+  vec4 b1  = vec4(x.zw, y.zw);
+  vec4 s0  = floor(b0) * 2.0 + 1.0;
+  vec4 s1  = floor(b1) * 2.0 + 1.0;
+  vec4 sh  = -step(h, vec4(0.0));
+  vec4 a0  = b0.xzyw + s0.xzyw * sh.xxyy;
+  vec4 a1  = b1.xzyw + s1.xzyw * sh.zzww;
+  vec3 p0  = vec3(a0.xy, h.x);
+  vec3 p1  = vec3(a0.zw, h.y);
+  vec3 p2  = vec3(a1.xy, h.z);
+  vec3 p3  = vec3(a1.zw, h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+  m = m * m;
+  return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+}
+
+void main() {
+  vColor = color;
+  vec3 pos = position;
+
+  if (uStrength > 0.001) {
+    float n = snoise(pos * 1.8 + vec3(0.0, 0.0, uTime * 0.18));
+    pos += normalize(pos + 1e-4) * n * uStrength * 0.1;
+  }
+
+  vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+  gl_PointSize = uSize * (uScale / -mvPosition.z);
+  gl_Position  = projectionMatrix * mvPosition;
+}
+`;
+
+const FRAGMENT_SHADER = /* glsl */ `
+uniform float uOpacity;
+uniform float uReveal;
+varying vec3 vColor;
+
+void main() {
+  vec2 uv = gl_PointCoord - 0.5;
+  float d = length(uv);
+  if (d > 0.5) discard;
+  float alpha = (1.0 - smoothstep(0.3, 0.5, d)) * uOpacity * uReveal;
+  gl_FragColor = vec4(vColor, alpha);
+}
+`;
+
+const FLOOR_VERTEX_SHADER = /* glsl */ `
+uniform float uTime;
+uniform float uReveal;
+uniform sampler2D uHeightField;
+varying float vAlpha;
+
+vec3 _m3(vec3 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+vec4 _m4(vec4 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+vec4 _pm(vec4 x) { return _m4(((x * 34.0) + 1.0) * x); }
+vec4 _ti(vec4 r)  { return 1.79284291400159 - 0.85373472095314 * r; }
+float snoise(vec3 v) {
+  const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i  = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g  = step(x0.yzx, x0.xyz);
+  vec3 l  = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+  i = _m3(i);
+  vec4 p = _pm(_pm(_pm(i.z + vec4(0.0,i1.z,i2.z,1.0)) + i.y + vec4(0.0,i1.y,i2.y,1.0)) + i.x + vec4(0.0,i1.x,i2.x,1.0));
+  float n_ = 0.142857142857;
+  vec3  ns = n_ * D.wyz - D.xzx;
+  vec4 j   = p - 49.0 * floor(p * ns.z * ns.z);
+  vec4 x_  = floor(j * ns.z);  vec4 y_ = floor(j - 7.0 * x_);
+  vec4 x   = x_ * ns.x + ns.yyyy; vec4 y = y_ * ns.x + ns.yyyy;
+  vec4 h   = 1.0 - abs(x) - abs(y);
+  vec4 b0  = vec4(x.xy, y.xy);  vec4 b1 = vec4(x.zw, y.zw);
+  vec4 s0  = floor(b0)*2.0+1.0; vec4 s1 = floor(b1)*2.0+1.0;
+  vec4 sh  = -step(h, vec4(0.0));
+  vec4 a0  = b0.xzyw + s0.xzyw*sh.xxyy;
+  vec4 a1  = b1.xzyw + s1.xzyw*sh.zzww;
+  vec3 p0  = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y);
+  vec3 p2  = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
+  vec4 norm = _ti(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+  vec4 m = max(0.6 - vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)), 0.0);
+  m = m*m;
+  return 42.0 * dot(m*m, vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}
+
+void main() {
+  vec3 pos = position;
+
+  // Sample the live particle-cloud height field for shape-accurate deformation.
+  // Floor local XZ spans [-FLOOR_SPREAD/2, +FLOOR_SPREAD/2] = [-10, 10].
+  vec2 hfUV    = clamp((pos.xz + 10.0) / 20.0, 0.001, 0.999);
+  float density = texture2D(uHeightField, hfUV).r;
+  float depress = density * 1.2;
+
+  // Slow noise undulation
+  float n = snoise(vec3(pos.x * 0.45 + uTime * 0.06, 0.0, pos.z * 0.45 + uTime * 0.05));
+  pos.y += -depress + n * 0.09;
+
+  // Edge fade + reveal
+  vAlpha = (1.0 - smoothstep(7.0, 10.0, length(pos.xz))) * 0.38 * uReveal;
+
+  vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+  gl_PointSize  = 2.0;
+  gl_Position   = projectionMatrix * mvPosition;
+}
+`;
+
+const FLOOR_FRAGMENT_SHADER = /* glsl */ `
+uniform vec3 uColor;
+varying float vAlpha;
+
+void main() {
+  vec2 uv = gl_PointCoord - 0.5;
+  if (length(uv) > 0.5) discard;
+  gl_FragColor = vec4(uColor, vAlpha);
+}
+`;
+
 function MorphingParticles({
   count,
   mouse,
+  isDark,
+  isMobile,
+  heightData,
+  heightTex,
 }: {
   count: number;
   mouse: React.RefObject<{ x: number; y: number }>;
+  isDark: boolean;
+  isMobile: boolean;
+  heightData: Float32Array;
+  heightTex: THREE.DataTexture;
 }) {
   const pts = useRef<THREE.Points>(null);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const isDarkRef = useRef(isDark);
+  useEffect(() => {
+    isDarkRef.current = isDark;
+    if (matRef.current)
+      matRef.current.uniforms.uOpacity.value = isDark ? 0.55 : 0.85;
+  }, [isDark]);
+  const heightDataRef = useRef(heightData);
+  const heightTexRef = useRef(heightTex);
   const shapeRef = useRef(0);
   const morphT = useRef(1.0);
   const fromPos = useRef<Float32Array | null>(null);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uStrength: { value: 1.0 },
+      uOpacity: { value: isDark ? 0.55 : 0.85 },
+      uReveal: { value: 0 },
+      uSize: { value: 0.02 },
+      uScale: {
+        value: 0.5 * gl.domElement.height,
+      },
+      // uniforms object is intentionally stable; isDark/reveal changes go through useEffect/useFrame
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const shapes = useMemo(
     () => [
-      sortByAngle(genOctahedron(count)),
       sortByAngle(genSphere(count)),
+      sortByAngle(genOctahedron(count)),
       sortByAngle(genCylinder(count).map((v) => v * 0.8)),
       sortByAngle(genCube(count).map((v) => v * 0.6)),
       sortByAngle(genTetrahedron(count)),
@@ -338,12 +562,7 @@ function MorphingParticles({
 
   // Display buffer — Three.js holds a reference to this Float32Array via <bufferAttribute>.
   const initialPos = useMemo(() => new Float32Array(shapes[0]), [shapes]);
-  // Mutable ref to the display buffer so the frame loop can write to it without triggering React-compiler errors.
-  const displayRef = useRef(initialPos);
-  useEffect(() => {
-    displayRef.current = initialPos;
-  }, [initialPos]);
-  // Morph base positions — morph loop writes here; offsets are added on top before compositing to displayRef.
+  // Morph base positions — morph loop writes here; offsets are added on top before compositing to the position attribute.
   const basePosArr = useMemo(() => new Float32Array(shapes[0]), [shapes]);
   const basePosRef = useRef(basePosArr);
   useEffect(() => {
@@ -363,7 +582,6 @@ function MorphingParticles({
     () => new Float32Array(count * 3).fill(0.69),
     [count],
   );
-  const colorsRef = useRef(initialColors);
 
   useEffect(() => {
     const sections = SECTION_IDS.map((id) => document.getElementById(id));
@@ -391,6 +609,22 @@ function MorphingParticles({
     if (!pts.current) return;
     const geo = pts.current.geometry;
 
+    // ── Wave + reveal uniforms ───────────────────────────────────────────────
+    if (matRef.current) {
+      matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+      const target = shapeRef.current === 0 ? 1.0 : 0.0;
+      matRef.current.uniforms.uStrength.value = THREE.MathUtils.lerp(
+        matRef.current.uniforms.uStrength.value,
+        target,
+        delta * 2.5,
+      );
+      matRef.current.uniforms.uReveal.value = THREE.MathUtils.smoothstep(
+        state.clock.elapsedTime,
+        0,
+        2.0,
+      );
+    }
+
     // ── Morph base positions ─────────────────────────────────────────────────
     if (morphT.current < 1) {
       morphT.current = Math.min(1, morphT.current + delta * 0.55);
@@ -406,67 +640,78 @@ function MorphingParticles({
     // ── Rotation ─────────────────────────────────────────────────────────────
     pts.current.rotation.y = state.clock.elapsedTime * 0.07;
     pts.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.03) * 0.08;
+
+    // ── Horizontal position shift (non-sphere shapes slide right on desktop) ──
+    const targetX = !isMobile && shapeRef.current !== 0 ? 2.2 : 1.5;
+    pts.current.position.x = THREE.MathUtils.lerp(
+      pts.current.position.x,
+      targetX,
+      delta * 1.5,
+    );
+
     pts.current.updateMatrixWorld(true);
 
     // ── Mouse repulsion ──────────────────────────────────────────────────────
-    // Transform the camera ray into particle local space so repulsion distance
-    // is measured as screen-space proximity — depth follows the geometry surface.
-    mouseNDCR.current.set(mouse.current.x, mouse.current.y);
-    raycasterR.current.setFromCamera(mouseNDCR.current, camera);
-    invMatrixR.current.copy(pts.current.matrixWorld).invert();
-    rayOriginR.current
-      .copy(raycasterR.current.ray.origin)
-      .applyMatrix4(invMatrixR.current);
-    rayDirR.current
-      .copy(raycasterR.current.ray.direction)
-      .transformDirection(invMatrixR.current)
-      .normalize();
-
-    const RADIUS = 0.7;
-    const STRENGTH = 0.28;
-    const decay = Math.exp(-delta * 4); // ~220 ms half-life, frame-rate independent
     const off = offsetsRef.current;
     const base = basePosRef.current;
-    const rox = rayOriginR.current.x,
-      roy = rayOriginR.current.y,
-      roz = rayOriginR.current.z;
-    const rdx = rayDirR.current.x,
-      rdy = rayDirR.current.y,
-      rdz = rayDirR.current.z;
+    if (!isMobile) {
+      mouseNDCR.current.set(mouse.current.x, mouse.current.y);
+      raycasterR.current.setFromCamera(mouseNDCR.current, camera);
+      invMatrixR.current.copy(pts.current.matrixWorld).invert();
+      rayOriginR.current
+        .copy(raycasterR.current.ray.origin)
+        .applyMatrix4(invMatrixR.current);
+      rayDirR.current
+        .copy(raycasterR.current.ray.direction)
+        .transformDirection(invMatrixR.current)
+        .normalize();
 
-    for (let i = 0; i < count; i++) {
-      const ix = i * 3;
-      // Vector from ray origin to particle
-      const px = base[ix] - rox,
-        py = base[ix + 1] - roy,
-        pz = base[ix + 2] - roz;
-      // Perpendicular distance from particle to the camera ray
-      const t = px * rdx + py * rdy + pz * rdz;
-      const ex = px - t * rdx,
-        ey = py - t * rdy,
-        ez = pz - t * rdz;
-      const dist2 = ex * ex + ey * ey + ez * ez;
-      if (dist2 < RADIUS * RADIUS && dist2 > 1e-10) {
-        const dist = Math.sqrt(dist2);
-        const force = (1 - dist / RADIUS) * STRENGTH;
-        off[ix] = off[ix] * decay + (ex / dist) * force * (1 - decay);
-        off[ix + 1] = off[ix + 1] * decay + (ey / dist) * force * (1 - decay);
-        off[ix + 2] = off[ix + 2] * decay + (ez / dist) * force * (1 - decay);
-      } else {
-        off[ix] *= decay;
-        off[ix + 1] *= decay;
-        off[ix + 2] *= decay;
+      const RADIUS = 0.7;
+      const STRENGTH = 0.28;
+      const decay = Math.exp(-delta * 4);
+      const rox = rayOriginR.current.x,
+        roy = rayOriginR.current.y,
+        roz = rayOriginR.current.z;
+      const rdx = rayDirR.current.x,
+        rdy = rayDirR.current.y,
+        rdz = rayDirR.current.z;
+
+      for (let i = 0; i < count; i++) {
+        const ix = i * 3;
+        const px = base[ix] - rox,
+          py = base[ix + 1] - roy,
+          pz = base[ix + 2] - roz;
+        const t = px * rdx + py * rdy + pz * rdz;
+        const ex = px - t * rdx,
+          ey = py - t * rdy,
+          ez = pz - t * rdz;
+        const dist2 = ex * ex + ey * ey + ez * ez;
+        if (dist2 < RADIUS * RADIUS && dist2 > 1e-10) {
+          const dist = Math.sqrt(dist2);
+          const force = (1 - dist / RADIUS) * STRENGTH;
+          off[ix] = off[ix] * decay + (ex / dist) * force * (1 - decay);
+          off[ix + 1] = off[ix + 1] * decay + (ey / dist) * force * (1 - decay);
+          off[ix + 2] = off[ix + 2] * decay + (ez / dist) * force * (1 - decay);
+        } else {
+          off[ix] *= decay;
+          off[ix + 1] *= decay;
+          off[ix + 2] *= decay;
+        }
       }
+    } else {
+      off.fill(0);
     }
 
     // ── Composite: display = base + offset ───────────────────────────────────
-    const disp = displayRef.current;
+    const posAttr = geo.getAttribute("position") as THREE.BufferAttribute;
+    const disp = posAttr.array as Float32Array;
     for (let i = 0; i < count * 3; i++) disp[i] = base[i] + off[i];
-    (geo.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+    posAttr.needsUpdate = true;
 
     // ── Vertex colours ───────────────────────────────────────────────────────
     const me = pts.current.matrixWorld.elements;
-    const col = colorsRef.current;
+    const colorAttr = geo.getAttribute("color") as THREE.BufferAttribute;
+    const col = colorAttr.array as Float32Array;
     for (let i = 0; i < count; i++) {
       const lx = base[i * 3],
         ly = base[i * 3 + 1],
@@ -475,10 +720,12 @@ function MorphingParticles({
       const wy = me[1] * lx + me[5] * ly + me[9] * lz + me[13];
       const wz = me[2] * lx + me[6] * ly + me[10] * lz + me[14];
 
-      let r = 0.03,
-        g = 0.03,
-        b = 0.03;
-      for (const ll of WORLD_LIGHTS) {
+      const ambMin = isDarkRef.current ? 0.03 : 0.0;
+      let r = ambMin,
+        g = ambMin,
+        b = ambMin;
+      const lights = isDarkRef.current ? WORLD_LIGHTS_DARK : WORLD_LIGHTS_LIGHT;
+      for (const ll of lights) {
         const dx = wx - ll.x,
           dy = wy - ll.y,
           dz = wz - ll.z;
@@ -491,7 +738,39 @@ function MorphingParticles({
       col[i * 3 + 1] = g;
       col[i * 3 + 2] = b;
     }
-    (geo.getAttribute("color") as THREE.BufferAttribute).needsUpdate = true;
+    colorAttr.needsUpdate = true;
+
+    // ── Height-field for ParticleFloor ───────────────────────────────────────
+    // Floor world pos [0,-3,-3]. Floor-local = world - [0,-3,-3].
+    // UV.x = (world_x + 10) / 20,  UV.y = (world_z + 13) / 20
+    const hd = heightDataRef.current;
+    hd.fill(0);
+    for (let i = 0; i < count; i += 8) {
+      const lx = base[i * 3],
+        ly = base[i * 3 + 1],
+        lz = base[i * 3 + 2];
+      const wx = me[0] * lx + me[4] * ly + me[8] * lz + me[12];
+      const wz = me[2] * lx + me[6] * ly + me[10] * lz + me[14];
+      const cx = ((wx + 10) / 20) * HF_RES;
+      const cz = ((wz + 13) / 20) * HF_RES;
+      const R = 2;
+      const ix0 = Math.max(0, Math.ceil(cx - R));
+      const ix1 = Math.min(HF_RES - 1, Math.floor(cx + R));
+      const iz0 = Math.max(0, Math.ceil(cz - R));
+      const iz1 = Math.min(HF_RES - 1, Math.floor(cz + R));
+      for (let ix = ix0; ix <= ix1; ix++) {
+        for (let iz = iz0; iz <= iz1; iz++) {
+          const dx = ix + 0.5 - cx,
+            dz = iz + 0.5 - cz;
+          const d = Math.sqrt(dx * dx + dz * dz);
+          if (d < R) hd[iz * HF_RES + ix] += 1 - d / R;
+        }
+      }
+    }
+    let hfMax = 0.001;
+    for (let i = 0; i < HF_RES * HF_RES; i++) if (hd[i] > hfMax) hfMax = hd[i];
+    for (let i = 0; i < HF_RES * HF_RES; i++) hd[i] /= hfMax;
+    heightTexRef.current.needsUpdate = true;
   });
 
   return (
@@ -500,86 +779,159 @@ function MorphingParticles({
         <bufferAttribute attach="attributes-position" args={[initialPos, 3]} />
         <bufferAttribute attach="attributes-color" args={[initialColors, 3]} />
       </bufferGeometry>
-      <pointsMaterial
-        vertexColors
-        size={0.02}
-        // sizeAttenuation
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={VERTEX_SHADER}
+        fragmentShader={FRAGMENT_SHADER}
+        uniforms={uniforms}
         transparent
-        opacity={0.55}
+        depthWrite={false}
       />
     </points>
   );
 }
 
-function HorizontalLines() {
-  return (
-    <>
-      {[-1.2, -0.4, 0.4, 1.2].map((y, i) => (
-        <mesh key={i} position={[0, y, -1]}>
-          <planeGeometry args={[12, 0.002]} />
-          <meshBasicMaterial color="#1a1a1a" transparent opacity={0.08} />
-        </mesh>
-      ))}
-    </>
-  );
-}
+const FLOOR_GRID = 80;
+const FLOOR_SPREAD = 20.0;
+const HF_RES = 32;
 
-function LightWithHelper({
-  position,
-  color,
-  intensity,
+function ParticleFloor({
+  isDark,
+  heightTex,
 }: {
-  position: [number, number, number];
-  color: string;
-  intensity: number;
+  isDark: boolean;
+  heightTex: THREE.DataTexture;
 }) {
-  const ref = useRef<THREE.PointLight>(null);
-  useHelper(
-    ref as React.RefObject<THREE.Object3D>,
-    THREE.PointLightHelper,
-    0.5,
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+
+  const positions = useMemo(() => {
+    const pos = new Float32Array(FLOOR_GRID * FLOOR_GRID * 3);
+    for (let i = 0; i < FLOOR_GRID; i++) {
+      for (let j = 0; j < FLOOR_GRID; j++) {
+        const idx = (i * FLOOR_GRID + j) * 3;
+        pos[idx] = (i / (FLOOR_GRID - 1) - 0.5) * FLOOR_SPREAD;
+        pos[idx + 1] = 0;
+        pos[idx + 2] = (j / (FLOOR_GRID - 1) - 0.5) * FLOOR_SPREAD;
+      }
+    }
+    return pos;
+  }, []);
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uReveal: { value: 0 },
+      uColor: { value: new THREE.Color().setScalar(isDark ? 0.52 : 0.08) },
+      uHeightField: { value: heightTex },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
+
+  useEffect(() => {
+    if (matRef.current)
+      matRef.current.uniforms.uColor.value.setScalar(isDark ? 0.52 : 0.08);
+  }, [isDark]);
+
+  useFrame((state) => {
+    if (matRef.current) {
+      matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+      matRef.current.uniforms.uReveal.value = THREE.MathUtils.smoothstep(
+        state.clock.elapsedTime,
+        0.4,
+        2.4,
+      );
+    }
+  });
+
   return (
-    <pointLight
-      ref={ref}
-      position={position}
-      color={color}
-      intensity={intensity}
-      distance={14}
-    />
+    <points position={[0, -1.5, -3]}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={FLOOR_VERTEX_SHADER}
+        fragmentShader={FLOOR_FRAGMENT_SHADER}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+      />
+    </points>
   );
 }
 
-function Scene() {
+// function LightWithHelper({
+//   position,
+//   color,
+//   intensity,
+// }: {
+//   position: [number, number, number];
+//   color: string;
+//   intensity: number;
+// }) {
+//   const ref = useRef<THREE.PointLight>(null);
+//   useHelper(
+//     ref as React.RefObject<THREE.Object3D>,
+//     THREE.PointLightHelper,
+//     0.5,
+//   );
+//   return (
+//     <pointLight
+//       ref={ref}
+//       position={position}
+//       color={color}
+//       intensity={intensity}
+//       distance={14}
+//     />
+//   );
+// }
+
+function Scene({
+  isDark,
+  isMobile,
+  prefersReducedMotion,
+}: {
+  isDark: boolean;
+  isMobile: boolean;
+  prefersReducedMotion: boolean;
+}) {
   const mouse = useMouseParallax();
+  const heightData = useMemo(() => new Float32Array(HF_RES * HF_RES), []);
+  const heightTex = useMemo(() => {
+    const t = new THREE.DataTexture(
+      heightData,
+      HF_RES,
+      HF_RES,
+      THREE.RedFormat,
+      THREE.FloatType,
+    );
+    t.minFilter = THREE.LinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.needsUpdate = true;
+    return t;
+  }, [heightData]);
   return (
     <>
-      <CameraRig mouse={mouse} />
+      <CameraRig mouse={mouse} isMobile={isMobile} />
       <ambientLight intensity={0.5} />
-      {LIGHTS_CONFIG.map((l, i) => (
+      {/* {LIGHTS_CONFIG.map((l, i) => (
         <LightWithHelper
           key={i}
           position={l.pos}
           color={l.color}
           intensity={l.intensity}
         />
-      ))}
-      <Grid
-        position={[0, -3, -3]}
-        args={[20, 20]}
-        cellSize={1}
-        cellThickness={0.3}
-        cellColor="#d0d0d0"
-        sectionSize={4}
-        sectionThickness={0.6}
-        sectionColor="#b0b0b0"
-        fadeDistance={18}
-        fadeStrength={1}
-        followCamera={false}
-        infiniteGrid
+      ))} */}
+      <MorphingParticles
+        count={isMobile || prefersReducedMotion ? 4000 : 8000}
+        mouse={mouse}
+        isDark={isDark}
+        isMobile={isMobile}
+        heightData={heightData}
+        heightTex={heightTex}
       />
-      <MorphingParticles count={8000} mouse={mouse} />
-      <HorizontalLines />
+      <ParticleFloor isDark={isDark} heightTex={heightTex} />
       <EffectComposer multisampling={0} frameBufferType={HalfFloatType}>
         <Bloom
           luminanceThreshold={0.8}
@@ -593,32 +945,30 @@ function Scene() {
   );
 }
 
-function StaticFallback() {
-  return (
-    <div
-      className="fixed inset-0 -z-10"
-      style={{
-        backgroundImage:
-          "linear-gradient(oklch(0.922 0 0) 1px, transparent 1px), linear-gradient(90deg, oklch(0.922 0 0) 1px, transparent 1px)",
-        backgroundSize: "80px 80px",
-        backgroundPosition: "-1px -1px",
-      }}
-      aria-hidden
-    />
-  );
-}
-
 export function HeroScene() {
+  const [isMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768,
+  );
+
   const [prefersReducedMotion] = useState(
     () =>
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
-  const [isMobile] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 768,
+
+  const [isDark, setIsDark] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      document.documentElement.classList.contains("dark"),
   );
 
-  if (prefersReducedMotion || isMobile) return <StaticFallback />;
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="fixed inset-0 -z-10" aria-hidden>
@@ -638,7 +988,11 @@ export function HeroScene() {
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
       >
-        <Scene />
+        <Scene
+          isDark={isDark}
+          isMobile={isMobile}
+          prefersReducedMotion={prefersReducedMotion}
+        />
       </Canvas>
     </div>
   );
