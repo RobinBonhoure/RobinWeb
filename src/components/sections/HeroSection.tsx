@@ -18,7 +18,7 @@ export function HeroSection({ profile, locale, stack }: Props) {
   return (
     <section
       id="hero"
-      className="relative min-h-[calc(100vh-4rem)] flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 overflow-hidden"
+      className="relative min-h-[calc(100svh-4rem)] flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 overflow-hidden"
       aria-label="Introduction"
     >
       {/* Neon RGB ambient glow — dark mode only */}

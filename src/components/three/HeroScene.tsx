@@ -976,7 +976,7 @@ export function HeroScene() {
   }, []);
 
   return (
-    <div className="fixed inset-0 -z-10" aria-hidden>
+    <div className="fixed top-0 left-0 right-0 -z-10 h-svh" aria-hidden>
       {/* RGB ambient glow — shows through the transparent canvas, dark mode only */}
       <div
         className="absolute inset-0 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-700"
