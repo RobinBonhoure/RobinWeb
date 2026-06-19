@@ -7,14 +7,13 @@ import type { Profile } from "@/db/schema";
 interface Props {
   profile: Profile;
   locale: string;
+  stack: string[];
 }
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-export function HeroSection({ profile, locale }: Props) {
+export function HeroSection({ profile, locale, stack }: Props) {
   const title = locale === "fr" ? profile.titleFr : profile.titleEn;
-  const [firstName, ...rest] = profile.name.split(" ");
-  const lastName = rest.join(" ");
 
   return (
     <section
@@ -23,7 +22,7 @@ export function HeroSection({ profile, locale }: Props) {
       aria-label="Introduction"
     >
       {/* Neon RGB ambient glow — dark mode only */}
-      {/* <div
+      <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-700"
         style={{
@@ -33,7 +32,7 @@ export function HeroSection({ profile, locale }: Props) {
             "radial-gradient(ellipse 38% 48% at 78% 70%, rgb(80 0 255 / 0.05) 0%, transparent 70%)",
           ].join(", "),
         }}
-      /> */}
+      />
 
       {/* Grid rules */}
       <div
@@ -41,49 +40,45 @@ export function HeroSection({ profile, locale }: Props) {
         aria-hidden
       />
 
-      <div className="max-w-4xl space-y-10 relative z-10">
-        {/* Eyebrow */}
-        <motion.p
-          className="text-label text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2, ease: easeOut }}
+      <div className="max-w-2xl space-y-8 relative z-10">
+        {/* title */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.35, ease: easeOut }}
         >
-          Portfolio — {new Date().getFullYear()}
-        </motion.p>
+          <h1 className="text-2xl md:text-4xl font-semibold tracking-tight text-foreground">
+            {title}
+          </h1>
+          <div className="mt-2.5 h-px w-20 bg-foreground/20 dark:bg-[linear-gradient(to_right,rgb(0_210_255_/_0.7),rgb(80_0_255_/_0.4),transparent)]" />
+        </motion.div>
 
-        {/* Display name */}
-        <div aria-hidden className="overflow-hidden">
-          <motion.h1
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.9, delay: 0.35, ease: easeOut }}
-            className="leading-[0.88] text-foreground"
+        {/* Stack pills */}
+        {stack.length > 0 && (
+          <motion.div
+            className="flex flex-wrap gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.65, ease: easeOut }}
+            aria-label="Tech stack"
           >
-            <span className="text-display block neon-text-glow">
-              {firstName}
-            </span>
-            <span className="text-display-light block">{lastName}</span>
-          </motion.h1>
-          <h1 className="sr-only">{profile.name}</h1>
-        </div>
-
-        {/* Title */}
-        <motion.p
-          className="text-lg md:text-xl text-muted-foreground max-w-xl font-light leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.65, ease: easeOut }}
-        >
-          {title}
-        </motion.p>
+            {stack.map((name) => (
+              <span
+                key={name}
+                className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground/70 dark:text-black/100 border border-border/50 dark:border-white/[0.08] px-2.5 py-1 rounded-sm bg-background/80 dark:bg-white/80"
+              >
+                {name}
+              </span>
+            ))}
+          </motion.div>
+        )}
 
         {/* CTAs */}
         <motion.div
           className="flex flex-wrap items-center gap-4 pt-2"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.85, ease: easeOut }}
+          transition={{ duration: 0.7, delay: 0.8, ease: easeOut }}
         >
           <Link
             href="#projets"
@@ -102,40 +97,6 @@ export function HeroSection({ profile, locale }: Props) {
           )}
         </motion.div>
       </div>
-
-      {/* Bottom meta */}
-      <motion.div
-        className="absolute bottom-8 left-6 md:left-16 lg:left-24 flex items-center gap-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 1.1 }}
-      >
-        {profile.location && (
-          <span className="text-label text-muted-foreground/60">
-            {profile.location}
-          </span>
-        )}
-        <a
-          href={`mailto:${profile.email}`}
-          className="text-label text-muted-foreground/60 hover:text-foreground transition-colors"
-        >
-          {profile.email}
-        </a>
-      </motion.div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 right-6 md:right-16 lg:right-24 flex flex-col items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 1.4 }}
-        aria-hidden
-      >
-        <span className="text-label text-muted-foreground/40 -rotate-90 origin-center translate-y-8">
-          scroll
-        </span>
-        <div className="w-px h-12 bg-border mt-10" />
-      </motion.div>
     </section>
   );
 }

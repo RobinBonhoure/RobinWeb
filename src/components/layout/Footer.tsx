@@ -10,8 +10,8 @@ export async function Footer({ locale }: Props) {
   if (!p) return null;
 
   const year = new Date().getFullYear();
-  const socialLinks = ((p.socials as SocialLink[]) ?? []).filter(
-    (s) => Boolean(s.url),
+  const socialLinks = ((p.socials as SocialLink[]) ?? []).filter((s) =>
+    Boolean(s.url),
   );
 
   return (
@@ -27,6 +27,7 @@ export async function Footer({ locale }: Props) {
           >
             {p.email}
           </a>
+          <p className="text-sm text-muted-foreground">{p.location}</p>
         </div>
 
         {socialLinks.length > 0 && (

@@ -102,7 +102,9 @@
 }
 
 @layer base {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     @apply border-border;
   }
   html {
@@ -110,7 +112,10 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01" on, "cv11" on, "liga" on;
+    font-feature-settings:
+      "ss01" on,
+      "cv11" on,
+      "liga" on;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -164,9 +169,9 @@
 /* Hero display name */
 .dark .neon-text-glow {
   text-shadow:
-    0 0 8px  rgb(0 220 255 / 0.5),
+    0 0 8px rgb(0 220 255 / 0.5),
     0 0 24px rgb(100 0 255 / 0.3),
-    0 0 52px rgb(255 0 80  / 0.18);
+    0 0 52px rgb(255 0 80 / 0.18);
 }
 
 /* Primary CTA button */
@@ -194,7 +199,9 @@
 
 /* Tag / badge border glow — skill tags */
 .neon-tag-hover {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .dark .neon-tag-hover:hover {
   border-color: rgb(0 210 255 / 0.5);
@@ -214,7 +221,8 @@
 }
 
 /* ── Lenis smooth scroll ─────────────────────────────────────────── */
-html.lenis, html.lenis body {
+html.lenis,
+html.lenis body {
   height: auto;
 }
 

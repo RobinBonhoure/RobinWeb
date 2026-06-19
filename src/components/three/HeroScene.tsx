@@ -300,10 +300,11 @@ const WORLD_LIGHTS_DARK = LIGHTS_CONFIG.map((l) => {
   return { x: l.pos[0], y: l.pos[1], z: -2, r: c.r, g: c.g, b: c.b, w: l.w };
 });
 // Light-theme lights: dark saturated colors so particles are visible against white.
-const WORLD_LIGHTS_LIGHT = LIGHTS_CONFIG.map((l) => {
-  const c = new THREE.Color(l.color);
-  return { x: l.pos[0], y: l.pos[1], z: -2, r: c.r, g: c.g, b: c.b, w: l.w };
-});
+const WORLD_LIGHTS_LIGHT = [
+  { x: -3, y: -0.5, z: -2, r: 0.05, g: 0.05, b: 0.5, w: 3.5 }, // dark blue
+  { x: 1.5, y: 2.5, z: -2, r: 0.38, g: 0.0, b: 0.48, w: 2.5 }, // dark purple
+  { x: 5.5, y: -1, z: -2, r: 0.0, g: 0.32, b: 0.48, w: 2.5 }, // dark teal
+];
 const LIGHT_K = 1.5; // higher = sharper/more localised falloff → distinct colour zones
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
@@ -429,6 +430,7 @@ void main() {
 const FLOOR_VERTEX_SHADER = /* glsl */ `
 uniform float uTime;
 uniform float uReveal;
+uniform float uAlpha;
 uniform sampler2D uHeightField;
 varying float vAlpha;
 
@@ -484,7 +486,7 @@ void main() {
   pos.y += -depress + n * 0.09;
 
   // Edge fade + reveal
-  vAlpha = (1.0 - smoothstep(7.0, 10.0, length(pos.xz))) * 0.38 * uReveal;
+  vAlpha = (1.0 - smoothstep(7.0, 10.0, length(pos.xz))) * uAlpha * uReveal;
 
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   gl_PointSize  = 2.0;
@@ -551,11 +553,11 @@ function MorphingParticles({
   const shapes = useMemo(
     () => [
       sortByAngle(genSphere(count)),
+      sortByAngle(genTorus(count)),
       sortByAngle(genOctahedron(count)),
       sortByAngle(genCylinder(count).map((v) => v * 0.8)),
-      sortByAngle(genCube(count).map((v) => v * 0.6)),
       sortByAngle(genTetrahedron(count)),
-      sortByAngle(genTorus(count)),
+      sortByAngle(genCube(count).map((v) => v * 0.6)),
     ],
     [count],
   );
@@ -642,7 +644,7 @@ function MorphingParticles({
     pts.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.03) * 0.08;
 
     // ── Horizontal position shift (non-sphere shapes slide right on desktop) ──
-    const targetX = !isMobile && shapeRef.current !== 0 ? 2.2 : 1.5;
+    const targetX = !isMobile && shapeRef.current !== 0 ? 3 : 1.5;
     pts.current.position.x = THREE.MathUtils.lerp(
       pts.current.position.x,
       targetX,
@@ -821,7 +823,8 @@ function ParticleFloor({
     () => ({
       uTime: { value: 0 },
       uReveal: { value: 0 },
-      uColor: { value: new THREE.Color().setScalar(isDark ? 0.52 : 0.08) },
+      uAlpha: { value: isDark ? 0.38 : 0.72 },
+      uColor: { value: new THREE.Color().setScalar(isDark ? 0.52 : 0.0) },
       uHeightField: { value: heightTex },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -829,8 +832,10 @@ function ParticleFloor({
   );
 
   useEffect(() => {
-    if (matRef.current)
-      matRef.current.uniforms.uColor.value.setScalar(isDark ? 0.52 : 0.08);
+    if (matRef.current) {
+      matRef.current.uniforms.uColor.value.setScalar(isDark ? 0.52 : 0.0);
+      matRef.current.uniforms.uAlpha.value = isDark ? 0.38 : 0.72;
+    }
   }, [isDark]);
 
   useFrame((state) => {

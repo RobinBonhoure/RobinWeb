@@ -41,7 +41,7 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 h-16 transition-all duration-300 ${
+      className={`fixed top-0 inset-x-0 z-50 flex items-center justify-around max-sm:justify-between px-6 md:px-12 h-16 transition-all duration-300 ${
         scrolled
           ? "bg-background/90 backdrop-blur-md border-b border-border/60 shadow-[0_1px_0_0_var(--border)]"
           : "bg-background/60 backdrop-blur-sm border-b border-transparent"
@@ -80,7 +80,7 @@ export function Header() {
           variant="ghost"
           size="sm"
           onClick={toggleLocale}
-          className="text-xs font-medium tracking-wider uppercase relative group"
+          className="text-xs font-medium tracking-wider uppercase relative group cursor-pointer"
           aria-label={
             locale === "fr" ? "Switch to English" : "Passer en français"
           }

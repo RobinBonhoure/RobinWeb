@@ -13,10 +13,7 @@ export function ProjectsSection({ projects, locale }: Props) {
   if (projects.length === 0) return null;
 
   return (
-    <section
-      id="projets"
-      className="px-6 md:px-16 lg:px-24 py-24 border-t border-border"
-    >
+    <section id="projets" className="px-6 md:px-16 lg:px-24 py-24">
       <div className="max-w-5xl mx-auto">
         <RevealOnScroll>
           <h2 className="text-label text-muted-foreground mb-16">
@@ -71,7 +68,7 @@ export function ProjectsSection({ projects, locale }: Props) {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-3">
+                    <p className="text-sm text-muted-foreground line-clamp-3 whitespace-pre-line">
                       {desc}
                     </p>
                     {project.tags.length > 0 && (
