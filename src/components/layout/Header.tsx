@@ -35,13 +35,12 @@ export function Header() {
       href: "#formations",
       label: locale === "fr" ? "Formations" : "Education",
     },
-    { href: "#stack", label: "Stack" },
     { href: "#projets", label: locale === "fr" ? "Projets" : "Projects" },
   ];
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 flex items-center justify-around max-sm:justify-between px-6 md:px-12 h-16 transition-all duration-300 ${
+      className={`fixed top-0 inset-x-0 z-50 grid grid-cols-3 px-6 md:px-12 h-16 transition-all duration-300 ${
         scrolled
           ? "bg-background/90 backdrop-blur-md border-b border-border/60 shadow-[0_1px_0_0_var(--border)]"
           : "bg-background/60 backdrop-blur-sm border-b border-transparent"
@@ -50,7 +49,7 @@ export function Header() {
       {/* Logotype */}
       <Link
         href={locale === "fr" ? "/" : "/en"}
-        className="text-sm font-semibold tracking-widest uppercase relative group outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="flex items-center text-sm font-semibold tracking-widest uppercase relative group outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
         Robin Bonhoure
         <span className="absolute -bottom-px left-0 h-px w-0 bg-foreground dark:bg-cyan-400 transition-all duration-300 group-hover:w-full" />
@@ -58,7 +57,7 @@ export function Header() {
 
       {/* Nav */}
       <nav
-        className="hidden md:flex items-center gap-8 text-sm text-muted-foreground"
+        className="col-start-2 hidden md:flex items-center justify-center gap-8 text-sm text-muted-foreground"
         aria-label="Navigation principale"
       >
         {NAV_ITEMS.map(({ href, label }) => (
@@ -74,7 +73,7 @@ export function Header() {
       </nav>
 
       {/* Controls */}
-      <div className="flex items-center gap-1">
+      <div className="col-start-3 flex items-center justify-end gap-1">
         <ThemeToggle />
         <Button
           variant="ghost"
