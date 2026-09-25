@@ -31,6 +31,18 @@ export function ExperiencesSection({ experiences, locale }: Props) {
                         {exp.location}
                       </p>
                     )}
+                    {exp.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-3">
+                        {exp.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground/70 dark:text-black/100 border border-border/50 dark:border-white/[0.08] px-2.5 py-1 rounded-sm bg-background/80 dark:bg-white/80"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <div>

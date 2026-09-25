@@ -37,9 +37,10 @@ export function ExperienceForm({ experience, defaultOrder = 0, onSuccess }: Prop
           roleEn: experience.roleEn,
           bulletsFr: experience.bulletsFr,
           bulletsEn: experience.bulletsEn,
+          tags: experience.tags,
           order: experience.order,
         }
-      : { company: "", location: "", period: "", roleFr: "", roleEn: "", bulletsFr: [], bulletsEn: [], order: defaultOrder },
+      : { company: "", location: "", period: "", roleFr: "", roleEn: "", bulletsFr: [], bulletsEn: [], tags: [], order: defaultOrder },
   });
 
   const onInvalid = () => {
@@ -78,6 +79,14 @@ export function ExperienceForm({ experience, defaultOrder = 0, onSuccess }: Prop
           {errors.period && <p className="text-xs text-destructive">{errors.period.message}</p>}
         </div>
       </div>
+
+      <Controller
+        name="tags"
+        control={control}
+        render={({ field }) => (
+          <BulletsField value={field.value} onChange={field.onChange} label="Tags" />
+        )}
+      />
 
       <Tabs defaultValue="fr">
         <TabsList>

@@ -8,6 +8,7 @@ export const experienceSchema = z.object({
   roleEn: z.string().min(1, "Requis"),
   bulletsFr: z.array(z.string()),
   bulletsEn: z.array(z.string()),
+  tags: z.array(z.string()),
   order: z.number().int(),
 });
 

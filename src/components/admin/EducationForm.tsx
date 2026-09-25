@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { educationSchema, type EducationFormValues } from "@/lib/validators/education";
 import { createEducation, updateEducation } from "@/lib/actions/educations";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { BulletsField } from "./BulletsField";
 import { toast } from "sonner";
 
 interface Props {
@@ -22,6 +23,7 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
   const isEdit = !!education;
   const {
     register,
+    control,
     handleSubmit,
     formState: { isSubmitting, errors },
   } = useForm<EducationFormValues>({
@@ -34,9 +36,10 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
           titleEn: education.titleEn,
           detailFr: education.detailFr ?? "",
           detailEn: education.detailEn ?? "",
+          tags: education.tags,
           order: education.order,
         }
-      : { school: "", period: "", titleFr: "", titleEn: "", detailFr: "", detailEn: "", order: defaultOrder },
+      : { school: "", period: "", titleFr: "", titleEn: "", detailFr: "", detailEn: "", tags: [], order: defaultOrder },
   });
 
   const onInvalid = () => {
@@ -67,6 +70,13 @@ export function EducationForm({ education, defaultOrder = 0, onSuccess }: Props)
           <Input id="period" {...register("period")} />
         </div>
       </div>
+      <Controller
+        name="tags"
+        control={control}
+        render={({ field }) => (
+          <BulletsField value={field.value} onChange={field.onChange} label="Tags" />
+        )}
+      />
       <Tabs defaultValue="fr">
         <TabsList>
           <TabsTrigger value="fr" className="relative">

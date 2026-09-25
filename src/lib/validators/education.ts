@@ -7,6 +7,7 @@ export const educationSchema = z.object({
   titleEn: z.string().min(1, "Requis"),
   detailFr: z.string().optional(),
   detailEn: z.string().optional(),
+  tags: z.array(z.string()),
   order: z.number().int(),
 });
 
