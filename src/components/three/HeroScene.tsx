@@ -214,23 +214,67 @@ function genOctahedron(n: number) {
   return p;
 }
 
-// Fibonacci torus: golden angle on main ring + area-uniform tube angle (Newton CDF inversion)
-function genTorus(n: number) {
-  const R = 0.65,
-    r = 0.28;
+// Golden-ratio vertices normalised to unit circumradius, same face sampling as genOctahedron
+function genIcosahedron(n: number) {
+  const s = 1 / Math.sqrt(1 + GR * GR);
+  const verts = [
+    [-1, GR, 0],
+    [1, GR, 0],
+    [-1, -GR, 0],
+    [1, -GR, 0],
+    [0, -1, GR],
+    [0, 1, GR],
+    [0, -1, -GR],
+    [0, 1, -GR],
+    [GR, 0, -1],
+    [GR, 0, 1],
+    [-GR, 0, -1],
+    [-GR, 0, 1],
+  ].map((v) => v.map((c) => c * s));
+  const faces = [
+    [0, 11, 5],
+    [0, 5, 1],
+    [0, 1, 7],
+    [0, 7, 10],
+    [0, 10, 11],
+    [1, 5, 9],
+    [5, 11, 4],
+    [11, 10, 2],
+    [10, 7, 6],
+    [7, 1, 8],
+    [3, 9, 4],
+    [3, 4, 2],
+    [3, 2, 6],
+    [3, 6, 8],
+    [3, 8, 9],
+    [4, 9, 5],
+    [2, 4, 11],
+    [6, 2, 10],
+    [8, 6, 7],
+    [9, 8, 1],
+  ];
   const p = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    const u = (2 * Math.PI * i) / GR;
-    const target = ((i + 0.5) / n) * R * Math.PI * 2;
-    let v = target / R;
-    for (let k = 0; k < 5; k++)
-      v -= (R * v + r * Math.sin(v) - target) / (R + r * Math.cos(v));
-    const y = r * Math.sin(v);
-    const z = (R + r * Math.cos(v)) * Math.sin(u);
-    // rotated 45° on X
-    p[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
-    p[i * 3 + 1] = (y - z) * Math.SQRT1_2;
-    p[i * 3 + 2] = (y + z) * Math.SQRT1_2;
+  const perFace = Math.floor(n / 20);
+  for (let f = 0; f < 20; f++) {
+    const [ai, bi, ci] = faces[f];
+    const a = verts[ai],
+      b = verts[bi],
+      c = verts[ci];
+    const start = f * perFace,
+      end = f === 19 ? n : start + perFace;
+    for (let j = 0; j < end - start; j++) {
+      const i = start + j;
+      let r1 = ((j + 1) * R2_A) % 1,
+        r2 = ((j + 1) * R2_B) % 1;
+      if (r1 + r2 > 1) {
+        r1 = 1 - r1;
+        r2 = 1 - r2;
+      }
+      const r3 = 1 - r1 - r2;
+      p[i * 3] = a[0] * r1 + b[0] * r2 + c[0] * r3;
+      p[i * 3 + 1] = a[1] * r1 + b[1] * r2 + c[1] * r3;
+      p[i * 3 + 2] = a[2] * r1 + b[2] * r2 + c[2] * r3;
+    }
   }
   return p;
 }
@@ -311,7 +355,7 @@ const WORLD_LIGHTS_LIGHT = [
 const LIGHT_K = 1.5; // higher = sharper/more localised falloff → distinct colour zones
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
-// section id → shape index: sphere(0) tetrahedron(1) cube(2) cylinder(3) octahedron(4) torus(5)
+// section id → shape index: sphere(0) icosahedron(1) octahedron(2) cylinder(3) tetrahedron(4) cube(5)
 const SECTION_IDS = [
   "hero",
   "experiences",
@@ -556,7 +600,7 @@ function MorphingParticles({
   const shapes = useMemo(
     () => [
       sortByAngle(genSphere(count)),
-      sortByAngle(genTorus(count)),
+      sortByAngle(genIcosahedron(count)),
       sortByAngle(genOctahedron(count)),
       sortByAngle(genCylinder(count).map((v) => v * 0.8)),
       sortByAngle(genTetrahedron(count)),
