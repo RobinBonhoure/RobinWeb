@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { ThemeScript } from "@/components/layout/ThemeScript";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
@@ -76,11 +77,8 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      {/* Prevent flash of unstyled theme on load */}
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var s=localStorage.getItem('theme'),d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(!s&&d)){document.documentElement.classList.add('dark')}})();` }} />
-      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ThemeScript />
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
