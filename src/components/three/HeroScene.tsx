@@ -225,9 +225,12 @@ function genTorus(n: number) {
     let v = target / R;
     for (let k = 0; k < 5; k++)
       v -= (R * v + r * Math.sin(v) - target) / (R + r * Math.cos(v));
+    const y = r * Math.sin(v);
+    const z = (R + r * Math.cos(v)) * Math.sin(u);
+    // rotated 45° on X
     p[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
-    p[i * 3 + 1] = r * Math.sin(v);
-    p[i * 3 + 2] = (R + r * Math.cos(v)) * Math.sin(u);
+    p[i * 3 + 1] = (y - z) * Math.SQRT1_2;
+    p[i * 3 + 2] = (y + z) * Math.SQRT1_2;
   }
   return p;
 }
